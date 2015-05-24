@@ -65,7 +65,6 @@ $(document).ready(function() {
     }
 
     function showToolTip(x, y, contents,g) {
-            console.log("contents: "+contents);
             $('<div id="tooltip">' + contents + '</div>').css( {
                     position: 'absolute',
                     top: y,
@@ -99,7 +98,6 @@ $(document).ready(function() {
 
                 x = item.pageX;
                 y = item.pageY;
-                console.log("plothover hit time: "+time+" value " + value + " x:"+x+" y:"+y);
                 if (previousPoint != item.dataIndex) {
                     previousPoint = item.dataIndex;
                     $("#tooltip").remove();
