@@ -161,18 +161,27 @@ public class Dash {
         return cPD;
     }
 
-    private HashMap getRecent(HashMap<Long,Long> map, Long age) {
+    private HashMap getRecent(HashMap<Long,Long> map, long age) {
         Date s = new Date();
+        java.util.Calendar cal = Calendar.getInstance();
+        long nowTime = cal.getTimeInMillis();
+        cal.set(Calendar.MINUTE,0);
+        cal.set(Calendar.SECOND,0);
+        cal.set(Calendar.MILLISECOND,0);
+        cal.add(Calendar.HOUR, -(cal.get(Calendar.HOUR_OF_DAY)));
+        long cutOff = cal.getTimeInMillis();
+        if (age > 0) {
+                cal.add(Calendar.DAY_OF_YEAR,-(int)age);
+                cutOff = cal.getTimeInMillis();
+        }
         log("Getting objects < "+age+" days old");
         HashMap<Long,Long> newMap = new HashMap<>();
         for ( Map.Entry<Long,Long> entry : map.entrySet()) {
             long eventTime = entry.getKey();
             long val = entry.getValue();
-            long nowTime = System.currentTimeMillis();
-            long cutOff = nowTime - (86400000L * age);
-            //log("getRecent: eventTime: "+eventTime+" cutoff: "+cutOff +" ("+nowTime+") "+age);
+            //log("getRecent: checking eventTime: "+eventTime+" cutoff: "+cutOff +" ("+nowTime+") "+age);
             if (eventTime > cutOff) {
-            //log("getRecent: Adding  key: "+ eventTime + " val "+ val);
+                //log("getRecent: Adding Recent key: "+ eventTime + " val "+ val);
                 newMap.put(eventTime,val);
             }
         }
