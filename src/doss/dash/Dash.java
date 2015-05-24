@@ -24,6 +24,7 @@ import org.apache.commons.io.filefilter.*;
 public class Dash {
 
     private static final long HISTORY = 7L;
+    private int calObject = Calendar.DAY_OF_YEAR;
     private HashMap<Long,Long> containerArchiveTimes = new HashMap<>();
     private HashMap<Long,Long> blobsPerContainer = new HashMap<>();
     private HashMap<Long,Long> auditTimes = new HashMap<>();
@@ -106,23 +107,24 @@ public class Dash {
 
 
     private String getTodaysBlobs() {
-        return buildJsonData("todaysblobs",addMissing(getRecent(containerArchiveTimes,0L),Calendar.HOUR_OF_DAY));
+        int calObject = Calendar.HOUR_OF_DAY;
+        return buildJsonData("todaysblobs",getRecent(containerArchiveTimes,12L,calObject));
     }
     private String getBlobHistory() {
         populateBlobsPerContainer();
-        return buildJsonData("blobhistory",getBlobsPerContainer(addMissing(getRecent(containerArchiveTimes,HISTORY),Calendar.DAY_OF_YEAR)));
+        return buildJsonData("blobhistory",getBlobsPerContainer(getRecent(containerArchiveTimes,HISTORY,calObject)));
     }
     private String getContainerHistory() {
-        return buildJsonData("containerhistory",addMissing(getContainersPerDay(getRecent(containerArchiveTimes,HISTORY)),Calendar.DAY_OF_YEAR));
+        return buildJsonData("containerhistory",getContainersPerDay(getRecent(containerArchiveTimes,HISTORY,calObject)));
     }
     private String getAuditBlobs() {
         populateAuditTimes();
         populateBlobsPerContainer();
-        return buildJsonData("auditblobs",addMissing(getBlobsPerContainer(getRecent(auditTimes,HISTORY)),Calendar.DAY_OF_YEAR));
+        return buildJsonData("auditblobs",getBlobsPerContainer(getRecent(auditTimes,HISTORY,calObject)));
     }
     private String getAuditContainers() {
         populateAuditTimes();
-        return buildJsonData("auditcontainers",addMissing(getContainersPerDay(getRecent(auditTimes,HISTORY)),Calendar.DAY_OF_YEAR));
+        return buildJsonData("auditcontainers",getContainersPerDay(getRecent(auditTimes,HISTORY,calObject)));
     }
 
 
@@ -159,20 +161,17 @@ public class Dash {
         return cPD;
     }
 
-    private HashMap getRecent(HashMap<Long,Long> map, long age) {
+    private HashMap getRecent(HashMap<Long,Long> map, long age,int calObject) {
         Date s = new Date();
-        long cutOff = getMidnightLastnight();
         java.util.Calendar cutOffCal = Calendar.getInstance();
-        if (age > 0) {
-                cutOffCal.add(Calendar.DAY_OF_YEAR,-(int)age);
-                cutOff = cutOffCal.getTimeInMillis();
-        }
-        log("Getting objects < "+age+" days old");
+        cutOffCal.add(calObject,-(int)age);
+        long cutOff = cutOffCal.getTimeInMillis();
+        log("Getting objects < "+age+" old");
         HashMap<Long,Long> newMap = new HashMap<>();
         for ( Map.Entry<Long,Long> entry : map.entrySet()) {
             long eventTime = entry.getKey();
             long val = entry.getValue();
-            //log("getRecent: checking eventTime: "+eventTime+" cutoff: "+cutOff +" ("+nowTime+") "+age);
+            //log("getRecent: checking eventTime: "+eventTime+" cutoff: "+cutOff +" "+age);
             if (eventTime > cutOff) {
                 //log("getRecent: Adding Recent key: "+ eventTime + " val "+ val);
                 newMap.put(eventTime,val);
@@ -180,82 +179,41 @@ public class Dash {
         }
         long elap =new Date().getTime() - s.getTime();
         log("getRecent took " + elap);
-        return newMap;
+        return addMissing(newMap,age,calObject);
     }
 
-    private HashMap addMissing(HashMap<Long,Long> map, int calObject) {
-        Date s = new Date();
-        java.util.Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY,0);
-        cal.set(Calendar.MINUTE,0);
-        cal.set(Calendar.SECOND,0);
-        java.util.Calendar nowCal = Calendar.getInstance();
-        HashMap<Long,Long> newMap = new HashMap<>();
-        long gap = 86400;
-        if (calObject == Calendar.HOUR_OF_DAY) {
-            gap = 3600;
-        }
-        List<Long> checkKeys = new ArrayList(map.keySet());
-        Collections.sort(checkKeys);
-        if (checkKeys.size() <1) {
-            HashMap<Long,Long> tmpMap = new HashMap<>();
-            if (calObject == Calendar.HOUR_OF_DAY) {
-                log("Today Data empty, adding blanks " +nowCal.get(Calendar.HOUR_OF_DAY) +" "+nowCal.get(Calendar.HOUR));
-                for (int h=0;h<nowCal.get(Calendar.HOUR_OF_DAY);h++) {
-                    cal.add(calObject,1);
-                    log("adding blanks " +cal.getTime());
-                    tmpMap.put(cal.getTimeInMillis(),0L);
-                }
-                return tmpMap;
-            } else {
-                log("Data empty, adding blank");
-                tmpMap.put(cal.getTimeInMillis(),0L);
-                return tmpMap;
-            }
-        }
-        cal.setTime(new Date());
-        long currTime = cal.getTimeInMillis();
-        long lastTime = checkKeys.get(checkKeys.size()-1);
-        Date lastDate = new Date(lastTime);
-        log("LAST date is " + lastDate + " : " + lastTime);
-        long nowDiff = currTime - lastTime;
-        if (nowDiff >(3600*1000)) {
-            log("Adding end padd for diff " +nowDiff + " of " + currTime + " - " + lastTime);
-            cal.setTime(new Date(lastTime));
-            cal.add(Calendar.HOUR,1);
-            map.put(cal.getTimeInMillis(),0L);
-            map.put(currTime,0L);
-        }
-        List<Long> keys = new ArrayList(map.keySet());
-        Collections.sort(keys);
-        for (long key : keys) {
-            newMap.put(key,map.get(key));
-            int idx = keys.indexOf(key);
-            if (idx <0 || idx+1 == keys.size()) {
-                continue;
-            }
-            long nextKey = keys.get(idx + 1);
-            long diff = (nextKey - key) /(1000 * gap);
-            //log("diff for " + nextKey + " - " + key+ " is " + diff);
-            if (diff >1) {
-                int j=0;
-                for (j=0; j<(diff - 1); j++) {
-                    java.util.Calendar newcal = Calendar.getInstance();
-                    newcal.setTime(new Date(key));
-                    newcal.set(Calendar.HOUR_OF_DAY,0);
-                    newcal.set(Calendar.MINUTE,0);
-                    newcal.set(Calendar.SECOND,0);
-                    newcal.add(calObject,j+1);
-                    newMap.put(newcal.getTimeInMillis(),0L);
-                    //log("Added a blank " + j +" " +newcal.getTimeInMillis());
+    private HashMap addMissing(HashMap<Long,Long> map, long age, int calObject) {
+        java.util.Calendar timerStart = Calendar.getInstance();
+        java.util.Calendar pointCal = Calendar.getInstance();
+        java.util.Calendar eventCal = Calendar.getInstance();
+        pointCal.set(Calendar.MINUTE,0);
+        pointCal.set(Calendar.SECOND,0);
+        pointCal.set(Calendar.MILLISECOND,0);
+        pointCal.add(calObject,-(int)age);
+        HashMap<Long,Long> tmpMap = new HashMap<>();
+        for (long point = age; point >0; point--) {
+            pointCal.add(calObject,1);
+            boolean found = false;
+            for ( Map.Entry<Long,Long> entry : map.entrySet()) {
+                long eventTime = entry.getKey();
+                eventCal.setTime(new Date(eventTime));
+                if (pointCal.get(calObject) == eventCal.get(calObject)) {
+                    found=true;
+                    //log("plot points match "+ pointCal.get(calObject) + " vs event "+eventCal.get(calObject) + " adding val "+entry.getValue());
+                    tmpMap.put(eventCal.getTimeInMillis(),entry.getValue());
                 }
             }
-        //log("addMissing passing on "+ key + " : " + map.get(key));
+            if (!found) {
+                log("no data for plottime " +pointCal.get(calObject) + " adding val 0");
+                tmpMap.put(pointCal.getTimeInMillis(),0L);
+            }
         }
-        long elap =new Date().getTime() - s.getTime();
+        java.util.Calendar timerEnd = Calendar.getInstance();
+        long elap =timerEnd.getTimeInMillis() - timerStart.getTimeInMillis();
         log("addMissing took " + elap);
-        return newMap;
+        return tmpMap;
     }
+
     private HashMap getBlobsPerContainer(HashMap<Long,Long> map) {
         Date s = new Date();
         HashMap<Long,Long> newMap = new HashMap<>();
