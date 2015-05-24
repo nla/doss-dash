@@ -15,7 +15,7 @@ $(document).ready(function() {
     var chart_options = {
         series: {
             lines: { show: true, fill: true },
-            curvedLines: { apply: true, active: true, monotonicFit: true }
+            curvedLines: { apply: false, active: true, monotonicFit: true }
         },
         legend: { show: true, position: "ne"},
         xaxis: { mode: "time", timeformat: "%Y/%m/%d %H:%M",timezone: "browser", ticks: 7, minTicks: 7},
