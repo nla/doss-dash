@@ -2,19 +2,19 @@
 <head>
 <title>DOSS2 Dashboard</title>
 #[[
-<script type="text/javascript" src="/js/flot/jquery.min.js"></script>
-<script type="text/javascript" src="/js/flot/jquery.flot.js"></script>
-<script type="text/javascript" src="/js/flot/jquery.flot.time.min.js"></script>
-<script type="text/javascript" src="/js/jquery.blockUI.js"></script>
-<script type="text/javascript" src="/js/curvedLines.js"></script>
-<script type="text/javascript" src="/js/graphs.js"></script>
+<script type="text/javascript" src="js/flot/jquery.min.js"></script>
+<script type="text/javascript" src="js/flot/jquery.flot.js"></script>
+<script type="text/javascript" src="js/flot/jquery.flot.time.min.js"></script>
+<script type="text/javascript" src="js/jquery.blockUI.js"></script>
+<script type="text/javascript" src="js/curvedLines.js"></script>
+<script type="text/javascript" src="js/graphs.js"></script>
 <style type="text/css">
 
 @charset "UTF-8";html,body,ul,ol,li,form,fieldset,legend{margin:0;padding:0}
 
 
 body {
-    background:#fff url(/img/bg-grain.jpg) repeat-x scroll 0 0;
+    background:#fff url(img/bg-grain.jpg) repeat-x scroll 0 0;
 }
 
 .title {
@@ -23,7 +23,7 @@ body {
 
 /* Gradinet and Rounded Corners */
 .graph-container, .graph-container-small {
-    background:#f8faf0 url(/img/bggradienthome.jpg) repeat-x 0 0;
+    background:#f8faf0 url(img/bggradienthome.jpg) repeat-x 0 0;
     -webkit-border-radius: 15px;
     -moz-border-radius: 15px;
     border-radius: 15px;
@@ -57,7 +57,7 @@ body {
     -moz-background-clip:border;
     -moz-background-inline-policy:continuous;
     -moz-background-origin:padding;
-    background:#000 url(/img/nla.gif) no-repeat scroll 0 0;
+    background:#000 url(img/nla.gif) no-repeat scroll 0 0;
     height:20px;
     margin:0 0 4px 0;
     overflow:hidden;

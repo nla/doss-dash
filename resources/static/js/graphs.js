@@ -57,7 +57,7 @@ $(document).ready(function() {
                 type: 'get',
                 dataType: 'json',
                 async: true,
-                url: '/getdata',
+                url: 'getdata',
                 data: {graph: gname},
                 success: jsongood
             });
