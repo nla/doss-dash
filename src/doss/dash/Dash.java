@@ -203,7 +203,7 @@ public class Dash {
                 cal.set(Calendar.MINUTE,0);
                 cal.set(Calendar.SECOND,0);
                 log("Today Data empty, adding blanks " +nowCal.get(Calendar.HOUR_OF_DAY) +" "+nowCal.get(Calendar.HOUR));
-                for (int h=0;h<=nowCal.get(Calendar.HOUR_OF_DAY);h++) {
+                for (int h=0;h<nowCal.get(Calendar.HOUR_OF_DAY);h++) {
                     cal.add(calObject,1);
                 log("adding blanks " +cal.getTime());
                     tmpMap.put(cal.getTimeInMillis(),0L);
