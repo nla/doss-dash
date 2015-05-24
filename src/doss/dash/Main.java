@@ -1,6 +1,5 @@
 package doss.dash;
 
-import doss.dash.*;
 import static spark.Spark.*;
 import spark.template.velocity.*;
 
@@ -18,11 +17,14 @@ import java.util.*;
 import java.text.*;
 
 import doss.dash.Database;
+import doss.dash.Dash;
 
 public class Main {
 	public static void main(String[] args) {
         System.out.println("DOSS_HOME is " + System.getProperty("doss.home"));
+
         staticFileLocation("/static");
+
         int PORT = Integer.parseInt(System.getProperty("port"));
         if (PORT > 1024) {
             port(PORT);

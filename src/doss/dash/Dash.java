@@ -316,8 +316,7 @@ public class Dash {
             containers.add(String.valueOf(entry.getValue()));
         }
         String SQL = "SELECT container_id,count(blob_id) from blobs where container_id IN ("+containers.toString()+") group by container_id";
-
-    log("SQL: "+SQL);
+        log("SQL: "+SQL);
         try (Connection db = Database.open()) {
             Statement st = db.createStatement();
             ResultSet rs = st.executeQuery(SQL);
