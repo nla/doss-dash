@@ -1,0 +1,172 @@
+<html>
+<head>
+<title>DOSS2 Dashboard</title>
+#[[
+<script type="text/javascript" src="/js/flot/jquery.min.js"></script>
+<script type="text/javascript" src="/js/flot/jquery.flot.js"></script>
+<script type="text/javascript" src="/js/flot/jquery.flot.time.min.js"></script>
+<script type="text/javascript" src="/js/jquery.blockUI.js"></script>
+<script type="text/javascript" src="/js/curvedLines.js"></script>
+<script type="text/javascript" src="/js/graphs.js"></script>
+<style type="text/css">
+
+@charset "UTF-8";html,body,ul,ol,li,form,fieldset,legend{margin:0;padding:0}
+
+
+body {
+	background:#fff url(/img/bg-grain.jpg) repeat-x scroll 0 0;
+}
+
+.title {
+	font-size: 300%;
+}
+
+/* Gradinet and Rounded Corners */
+.graph-container, .graph-container-small {
+	background:#f8faf0 url(/img/bggradienthome.jpg) repeat-x 0 0;
+	-webkit-border-radius: 15px;
+	-moz-border-radius: 15px;
+	border-radius: 15px;
+}
+
+/* Graph Container */
+.graph-container {
+	position: relative;
+	width: 500px;
+	height: 200px;
+	padding-right: 20px;
+	padding-bottom: 10px;
+	-webkit-box-shadow: 0px 1px 2px rgba(0,0,0,.1);
+	-moz-box-shadow: 0px 1px 2px rgba(0,0,0,.1);
+	box-shadow: 0px 1px 2px rgba(0,0,0,.1);
+}
+
+/* Graph Container small size */
+.graph-container-small {
+	position: relative;
+	float: right;
+	width: 400px;
+	height: 200px;
+	padding: 10px;
+	-webkit-box-shadow: 0px 1px 2px rgba(0,0,0,.1);
+	-moz-box-shadow: 0px 1px 2px rgba(0,0,0,.1);
+	box-shadow: 0px 1px 2px rgba(0,0,0,.1);
+}
+
+.nla{
+	-moz-background-clip:border;
+	-moz-background-inline-policy:continuous;
+	-moz-background-origin:padding;
+	background:#000 url(/img/nla.gif) no-repeat scroll 0 0;
+	height:20px;
+	margin:0 0 4px 0;
+	overflow:hidden;
+	text-indent:-9999px;
+	width:100%;
+}
+.nla a {
+	display:block;
+	height:10px;
+	width:350px;
+}
+
+
+.graph-container > div {
+	position: absolute;
+	width: inherit;
+	height: inherit;
+	top: 10px;
+	left: 25px;
+}
+
+.graph-container-small > div {
+	position: absolute;
+	width: inherit;
+	height: inherit;
+	top: 10px;
+	left: 25px;
+}
+
+.info {
+	font-size: 220%
+
+}
+
+.graph-info {
+	margin-bottom: 5px;
+}
+</style>
+
+]]#
+
+
+</head>
+<body>
+<p class="nla"><a href="http://www.nla.gov.au">National Library of Australia</a></p> 
+
+<div class="title">
+<center>DOSS Dashboard</center>
+</div>
+<table cellborder=0 border=0 cellpadding=0>
+<tr><td style="width:50%;">
+<div class="info">
+${totalSize} GigaBytes &nbsp;&nbsp;${blobCount} Blobs<br>
+${containerCount} Containers &nbsp;&nbsp; ${auditCount} scrubbed
+</div>
+#[[
+</td><td align="right">
+
+
+<div id="graph-wrapper-todaysblobs">
+	<div class="graph-info">
+	</div>
+	<div class="graph-container-small">
+		<div id="gd_todaysblobs"></div>
+	</div>
+</div>
+
+</td></tr>
+<tr><td align="left">
+
+<div id="graph-wrapper-containerhistory">
+	<div class="graph-info">
+	</div>
+	<div class="graph-container">
+		<div id="gd_containerhistory"></div>
+	</div>
+</div>
+
+</td>
+<td alight="right">
+
+<div id="graph-wrapper-blobhistory">
+	<div class="graph-info">
+	</div>
+	<div class="graph-container">
+		<div id="gd_blobhistory"></div>
+	</div>
+</div>
+
+</td></tr>
+
+<tr><td align="left">
+<div id="graph-wrapper-auditcontainers">
+	<div class="graph-info">
+	</div>
+	<div class="graph-container">
+		<div id="gd_auditcontainers"></div>
+	</div>
+</div>
+</td>
+<td align="right">
+<div id="graph-wrapper-auditblobs">
+	<div class="graph-info">
+	</div>
+	<div class="graph-container">
+		<div id="gd_auditblobs"></div>
+	</div>
+</div>
+</td></tr></table>
+]]#
+</body>
+</html>

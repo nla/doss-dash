@@ -1,0 +1,16 @@
+<html>
+<head>
+<title>DOSS2 Dashboard</title>
+<h3>Welcome to the DOSS2 Dashboard</h3>
+
+#include('js/graph.js');
+</head>
+
+<body>
+
+<DD>DOSS2 Size: ${totalSize} GigaBytes
+<DD>${blobCount} Blobs, ${containerCount} Containers, ${auditCount} Containers scrubbed
+<p>
+
+</body>
+</html>
