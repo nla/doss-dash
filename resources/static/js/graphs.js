@@ -15,7 +15,7 @@ $(document).ready(function() {
     var chart_options = {
         series: {
             lines: { show: true, fill: true },
-            curvedLines: { apply: true, active: true, monotonicFit: true }
+            curvedLines: { apply: false, active: true, monotonicFit: true }
         },
         legend: { show: true, position: "ne"},
         xaxis: { mode: "time", timeformat: "%Y/%m/%d %H:%M",timezone: "browser", ticks: 7, minTicks: 7},
@@ -64,6 +64,23 @@ $(document).ready(function() {
         }
     }
 
+    function showToolTip(x, y, contents,g) {
+            console.log("contents: "+contents);
+            $('<div id="tooltip">' + contents + '</div>').css( {
+                    position: 'absolute',
+                    top: y,
+                    left: x,
+                    display: 'none',
+                    border: '1px solid #fdd',
+                    padding: '2px',
+                    'background-color': '#fee',
+                    opacity: 0.90
+                }).appendTo("body").fadeIn(200);
+                //}).appendTo("#gd_"+g).fadeIn(200);
+    }
+    var previousPoint = null;
+
+
     // mainish part
     //var offset = new Date().getTimezoneOffset();
     //var now = new Date();
@@ -73,6 +90,30 @@ $(document).ready(function() {
 
     for (k in graphconfig.graphs) {
         $("#graph-wrapper-"+k).hide();
+
+        $("#gd_"+k).bind("plothover", function (event, pos, item) {
+            if (item) {
+                value = pos.y.toFixed(0);
+                time = pos.x.toFixed(0);
+                time = item.datapoint[0].toFixed(0),
+
+                x = item.pageX;
+                y = item.pageY;
+                console.log("plothover hit time: "+time+" value " + value + " x:"+x+" y:"+y);
+                if (previousPoint != item.dataIndex) {
+                    previousPoint = item.dataIndex;
+                    $("#tooltip").remove();
+                    epoch = time / 1000;
+                    d = new Date(0);
+                    d.setUTCSeconds(epoch);
+                    var contents = item.series.label + ": "+ value + "<br>" + d;
+                    showToolTip(item.pageX,item.pageY,contents,k);
+                }
+            } else {
+                $("#tooltip").remove();
+                previousPoint = null;            
+            }
+        });
     }
     updateData();
     setInterval(updateData,300000);
