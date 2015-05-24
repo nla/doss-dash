@@ -17,10 +17,9 @@ import org.apache.commons.compress.utils.Charsets;
 
 abstract class Database implements Closeable {
 
-	public static String DOSS_HOME = System.getProperty("doss.home");
-    //Class.forName("org.h2.Driver");
+    public static String DOSS_HOME = System.getProperty("doss.home");
 
-	public static Connection open() throws SQLException {
+    public static Connection open() throws SQLException {
 
         Path urlFile = Paths.get(DOSS_HOME + "/db/").resolve("jdbc-url");
         if (Files.exists(urlFile)) {
@@ -29,13 +28,10 @@ abstract class Database implements Closeable {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-		} else {
-			throw new RuntimeException("No jdbc-url at " + urlFile);
-		}
+        } else {
+            throw new RuntimeException("No jdbc-url at " + urlFile);
+        }
     }
-
-
-
 }
 
 
