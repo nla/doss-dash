@@ -12,8 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import org.apache.commons.compress.utils.Charsets;
+import java.nio.charset.StandardCharsets;
 
 abstract class Database implements Closeable {
 
@@ -24,7 +23,7 @@ abstract class Database implements Closeable {
         Path urlFile = Paths.get(DOSS_HOME + "/db/").resolve("jdbc-url");
         if (Files.exists(urlFile)) {
             try {
-                return DriverManager.getConnection(Files.readAllLines(urlFile, Charsets.UTF_8).get(0));
+                return DriverManager.getConnection(Files.readAllLines(urlFile, StandardCharsets.UTF_8).get(0));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
