@@ -28,6 +28,7 @@ public class Dash {
     private HashMap<Long,Long> containerArchiveTimes = new HashMap<>();
     private HashMap<Long,Long> blobsPerContainer = new HashMap<>();
     private HashMap<Long,Long> auditTimes = new HashMap<>();
+    private HashMap<Long,Long> containerSizes = new HashMap<>();
 
 
     public ModelAndView index() {
@@ -115,7 +116,8 @@ public class Dash {
         return buildJsonData("blobhistory",getBlobsPerContainer(getRecent(containerArchiveTimes,HISTORY,calObject)));
     }
     private String getContainerHistory() {
-        return buildJsonData("containerhistory",getContainersPerDay(getRecent(containerArchiveTimes,HISTORY,calObject)));
+        populateContainerSizes();
+        return buildJsonData("containerhistory",getContainerSizesPerDay(getRecent(containerArchiveTimes,HISTORY,calObject)));
     }
     private String getAuditBlobs() {
         populateAuditTimes();
@@ -136,6 +138,35 @@ public class Dash {
     }
     private void populateContainerArchiveTimes() {
         this.containerArchiveTimes = getAllTarContainers("/doss/display/data");
+    }
+    private void populateContainerSizes() {
+        this.containerSizes = getAllContainerSizes();
+    }
+
+    private HashMap getContainerSizesPerDay(HashMap<Long,Long> map) {
+        Date timerStart = new Date();
+        java.util.Calendar cal = Calendar.getInstance();
+        HashMap<Long,Long> cS = new HashMap<>();
+        for ( Map.Entry<Long,Long> entry : map.entrySet()) {
+            cal.setTime(new Date(entry.getKey()));
+            cal.set(Calendar.MINUTE,0);
+            cal.set(Calendar.SECOND,0);
+            cal.set(Calendar.MILLISECOND,0);
+            long eventTime = cal.getTimeInMillis();
+            long cid = entry.getValue();
+            //log("cPD Event: "+eventTime +" value: "+entry.getValue());
+            long s = 0;
+            if (containerSizes.containsKey(cid)) {
+                s = containerSizes.get(cid)/1024/1024/1024;
+            }
+            if (cS.containsKey(eventTime)) {
+                s += cS.get(eventTime);
+            }
+            cS.put(entry.getKey(),s);
+        }
+        long elap =new Date().getTime() - timerStart.getTime();
+        log("getContainersSizes took " + elap);
+        return cS;
     }
 
     private HashMap getContainersPerDay(HashMap<Long,Long> map) {
@@ -251,6 +282,26 @@ public class Dash {
         long elap =new Date().getTime() - s.getTime();
         log("getAuditTimes took " + elap);
         return aTs;
+    }
+
+    private HashMap getAllContainerSizes() {
+        Date s = new Date();
+        HashMap<Long,Long> aCS = new HashMap<>();
+        String SQL = "SELECT container_id,size from containers where size >0";
+
+        log("SQL: "+SQL);
+        try (Connection db = Database.open()) {
+            Statement st = db.createStatement();
+            ResultSet rs = st.executeQuery(SQL);
+            while (rs.next()) {
+                aCS.put(rs.getLong(1), rs.getLong(2));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        long elap =new Date().getTime() - s.getTime();
+        log("getAllContainerSizes took " + elap);
+        return aCS;
     }
 
     private HashMap getAllBlobsPerContainer() {

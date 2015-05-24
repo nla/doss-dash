@@ -6,7 +6,7 @@ $(document).ready(function() {
         graphs: {
             todaysblobs: {label: "Todays Blob Archiving ", color: "#FF00FF", ylabel: "blobs", format: timeFormat},
             blobhistory: {label: "Blobs Archived", color: "#FF99FF", ylabel: "containers"},
-            containerhistory: {label: "Containers Archived", color: "#00FFFF", ylabel: "containers"},
+            containerhistory: {label: "Gigabytes Archived", color: "#00FFFF", ylabel: "containers"},
             auditcontainers: {label: "Containers Verified", color: "#44FF00", ylabel: "containers"},
             auditblobs: {label: "Blobs Verified", color: "#0044FF", ylabel: "blobs"},
          }
