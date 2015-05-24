@@ -139,14 +139,12 @@ public class Dash {
     private HashMap getContainersPerDay(HashMap<Long,Long> map) {
         Date s = new Date();
         java.util.Calendar cal = Calendar.getInstance();
-        //cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         HashMap<Long,Long> cPD = new HashMap<>();
         for ( Map.Entry<Long,Long> entry : map.entrySet()) {
             cal.setTime(new Date(entry.getKey()));
             cal.set(Calendar.MINUTE,0);
             cal.set(Calendar.SECOND,0);
             cal.set(Calendar.MILLISECOND,0);
-            long eventHour = cal.get(Calendar.HOUR_OF_DAY);
             long eventTime = cal.getTimeInMillis();
             //log("cPD Event: "+eventTime +" value: "+entry.getValue());
             if (cPD.get(eventTime) != null) {
@@ -163,16 +161,11 @@ public class Dash {
 
     private HashMap getRecent(HashMap<Long,Long> map, long age) {
         Date s = new Date();
-        java.util.Calendar cal = Calendar.getInstance();
-        long nowTime = cal.getTimeInMillis();
-        cal.set(Calendar.MINUTE,0);
-        cal.set(Calendar.SECOND,0);
-        cal.set(Calendar.MILLISECOND,0);
-        cal.add(Calendar.HOUR, -(cal.get(Calendar.HOUR_OF_DAY)));
-        long cutOff = cal.getTimeInMillis();
+        long cutOff = getMidnightLastnight();
+        java.util.Calendar cutOffCal = Calendar.getInstance();
         if (age > 0) {
-                cal.add(Calendar.DAY_OF_YEAR,-(int)age);
-                cutOff = cal.getTimeInMillis();
+                cutOffCal.add(Calendar.DAY_OF_YEAR,-(int)age);
+                cutOff = cutOffCal.getTimeInMillis();
         }
         log("Getting objects < "+age+" days old");
         HashMap<Long,Long> newMap = new HashMap<>();
@@ -192,6 +185,11 @@ public class Dash {
 
     private HashMap addMissing(HashMap<Long,Long> map, int calObject) {
         Date s = new Date();
+        java.util.Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY,0);
+        cal.set(Calendar.MINUTE,0);
+        cal.set(Calendar.SECOND,0);
+        java.util.Calendar nowCal = Calendar.getInstance();
         HashMap<Long,Long> newMap = new HashMap<>();
         long gap = 86400;
         if (calObject == Calendar.HOUR_OF_DAY) {
@@ -202,45 +200,30 @@ public class Dash {
         if (checkKeys.size() <1) {
             HashMap<Long,Long> tmpMap = new HashMap<>();
             if (calObject == Calendar.HOUR_OF_DAY) {
-                java.util.Calendar nowCal = Calendar.getInstance();
-                //nowCal.setTimeZone(TimeZone.getTimeZone("UTC"));
-                nowCal.setTime(new Date());
-                java.util.Calendar cal = Calendar.getInstance();
-                //cal.setTimeZone(TimeZone.getTimeZone("UTC"));
-                cal.setTime(new Date());
-                cal.set(Calendar.HOUR_OF_DAY,0);
-                cal.set(Calendar.MINUTE,0);
-                cal.set(Calendar.SECOND,0);
                 log("Today Data empty, adding blanks " +nowCal.get(Calendar.HOUR_OF_DAY) +" "+nowCal.get(Calendar.HOUR));
                 for (int h=0;h<nowCal.get(Calendar.HOUR_OF_DAY);h++) {
                     cal.add(calObject,1);
-                log("adding blanks " +cal.getTime());
+                    log("adding blanks " +cal.getTime());
                     tmpMap.put(cal.getTimeInMillis(),0L);
                 }
                 return tmpMap;
             } else {
-            log("Data empty, adding blank");
-                java.util.Calendar cal = Calendar.getInstance();
-                //cal.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    tmpMap.put(cal.getTimeInMillis(),0L);
+                log("Data empty, adding blank");
+                tmpMap.put(cal.getTimeInMillis(),0L);
                 return tmpMap;
             }
         }
-        long currTime = System.currentTimeMillis();
+        cal.setTime(new Date());
+        long currTime = cal.getTimeInMillis();
         long lastTime = checkKeys.get(checkKeys.size()-1);
-        long nowDiff = currTime - lastTime;
-
         Date lastDate = new Date(lastTime);
         log("LAST date is " + lastDate + " : " + lastTime);
+        long nowDiff = currTime - lastTime;
         if (nowDiff >(3600*1000)) {
-        log("Adding end padd for diff " +nowDiff + " of " + currTime + " - " + lastTime);
-            java.util.Calendar yesterdayCal = Calendar.getInstance();
-            //yesterdayCal.setTimeZone(TimeZone.getTimeZone("UTC"));
-            yesterdayCal.set(Calendar.HOUR,0);
-            yesterdayCal.set(Calendar.MINUTE,0);
-            yesterdayCal.set(Calendar.SECOND,0);
-            yesterdayCal.add(calObject,-1);
-            //map.put(yesterdayCal.getTimeInMillis(),0L);
+            log("Adding end padd for diff " +nowDiff + " of " + currTime + " - " + lastTime);
+            cal.setTime(new Date(lastTime));
+            cal.add(Calendar.HOUR,1);
+            map.put(cal.getTimeInMillis(),0L);
             map.put(currTime,0L);
         }
         List<Long> keys = new ArrayList(map.keySet());
@@ -258,7 +241,6 @@ public class Dash {
                 int j=0;
                 for (j=0; j<(diff - 1); j++) {
                     java.util.Calendar newcal = Calendar.getInstance();
-                    //newcal.setTimeZone(TimeZone.getTimeZone("UTC"));
                     newcal.setTime(new Date(key));
                     newcal.set(Calendar.HOUR_OF_DAY,0);
                     newcal.set(Calendar.MINUTE,0);
@@ -296,7 +278,6 @@ public class Dash {
     private HashMap getAuditTimes() {
         Date s = new Date();
         java.util.Calendar cal = Calendar.getInstance();
-        //cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         HashMap<Long,Long> aTs = new HashMap<>();
         try (Connection db = Database.open()) {
             String SQL="SELECT time,container_id from digest_audits where cast(time as date) >= CURRENT_DATE() - "+ HISTORY +" order by time;";
@@ -373,4 +354,13 @@ public class Dash {
             System.out.println(l);
         }
     }
-}
+    private long getMidnightLastnight() {
+        java.util.Calendar yesterdayCal = Calendar.getInstance();
+        //yesterdayCal.setTimeZone(TimeZone.getTimeZone("UTC"));
+        yesterdayCal.set(Calendar.HOUR_OF_DAY,0);
+        yesterdayCal.set(Calendar.MINUTE,0);
+        yesterdayCal.set(Calendar.SECOND,0);
+        log("Midnight lastnight: " + yesterdayCal.getTimeInMillis());
+        return yesterdayCal.getTimeInMillis();
+    }
+ }

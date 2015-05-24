@@ -1,6 +1,6 @@
 $(document).ready(function() {
 
-    var dateFormat = "%a";
+    var dateFormat = "%a %H";
     var timeFormat = "%H:%M";
     var graphconfig = {
         graphs: {
