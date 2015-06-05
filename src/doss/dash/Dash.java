@@ -40,7 +40,7 @@ public class Dash {
 
             ResultSet audits = st.executeQuery("SELECT count(container_id) as b from digest_audits;");
             if (audits.next()) {
-                model.put("auditCount",audits.getInt(1));
+                model.put("auditCount",numFormat.format(audits.getInt(1)));
             }
             ResultSet size = st.executeQuery("SELECT sum(size) from containers;");
             if (size.next()) {
