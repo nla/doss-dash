@@ -4,9 +4,9 @@ $(document).ready(function() {
     var timeFormat = "%H:%M";
     var graphconfig = {
         graphs: {
-            todaysblobs: {label: "Todays Blob Archiving ", color: "#FF00FF", ylabel: "blobs", format: timeFormat},
+            todaysblobs: {label: "Todays Blob Archiving ", color: "#FF00FF", ylabel: "blobs", format: timeFormat, points: false},
             blobhistory: {label: "Blobs Archived", color: "#FF99FF", ylabel: "containers"},
-            containerhistory: {label: "Gigabytes Archived", color: "#00FFFF", ylabel: "containers"},
+            containerhistory: {label: "Gigabytes Archived", color: "#00FFFF", ylabel: "containers", points: false},
             auditcontainers: {label: "Containers Verified", color: "#44FF00", ylabel: "containers"},
             auditblobs: {label: "Blobs Verified", color: "#0044FF", ylabel: "blobs"},
          }
@@ -15,9 +15,10 @@ $(document).ready(function() {
     var chart_options = {
         series: {
             lines: { show: true, fill: true },
-            curvedLines: { apply: false, active: true, monotonicFit: true }
+            curvedLines: { apply: false, active: true, monotonicFit: true },
+            points: {show: false},
         },
-        legend: { show: true, position: "ne"},
+        legend: { show: true, position: "nw"},
         xaxis: { mode: "time", timeformat: "%Y/%m/%d %H:%M",timezone: "browser", ticks: 7, minTicks: 7},
         yaxis: { zoomRange: [0.1, 10], panRange: [-10, 10], tickLength: 0,min: 0},
         zoom: { interactive: false},
@@ -39,6 +40,11 @@ $(document).ready(function() {
             }
             gdata.color=graphconfig.graphs[gname].color;
             gdata.label=graphconfig.graphs[gname].label;
+            if (graphconfig.graphs[gname].points) {
+                chart_options.series.points.show=true;
+            } else {
+                chart_options.series.points.show=false;
+            }
 
             $("#graph-wrapper-"+gname).show();
             $.plot($("#gd_"+gname), [gdata], chart_options);

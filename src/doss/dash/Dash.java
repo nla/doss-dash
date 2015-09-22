@@ -108,8 +108,8 @@ public class Dash {
 
 
     private String getTodaysBlobs() {
-        int calObject = Calendar.HOUR_OF_DAY;
-        return buildJsonData("todaysblobs",getRecent(containerArchiveTimes,12L,calObject));
+        populateBlobsPerContainer();
+        return buildJsonData("todaysblobs",getBlobsPerContainer(getRecent(containerArchiveTimes,12L,Calendar.HOUR_OF_DAY)));
     }
     private String getBlobHistory() {
         populateBlobsPerContainer();
@@ -149,12 +149,12 @@ public class Dash {
         HashMap<Long,Long> cS = new HashMap<>();
         for ( Map.Entry<Long,Long> entry : map.entrySet()) {
             cal.setTime(new Date(entry.getKey()));
+            cal.set(Calendar.HOUR_OF_DAY,0);
             cal.set(Calendar.MINUTE,0);
             cal.set(Calendar.SECOND,0);
             cal.set(Calendar.MILLISECOND,0);
             long eventTime = cal.getTimeInMillis();
             long cid = entry.getValue();
-            //log("cPD Event: "+eventTime +" value: "+entry.getValue());
             long s = 0;
             if (containerSizes.containsKey(cid)) {
                 s = containerSizes.get(cid)/1024/1024/1024;
@@ -162,10 +162,10 @@ public class Dash {
             if (cS.containsKey(eventTime)) {
                 s += cS.get(eventTime);
             }
-            cS.put(entry.getKey(),s);
+            cS.put(eventTime,s);
         }
         long elap =new Date().getTime() - timerStart.getTime();
-        log("getContainersSizes took " + elap);
+        log("getContainersSizesPerDay took " + elap);
         return cS;
     }
 
@@ -175,6 +175,7 @@ public class Dash {
         HashMap<Long,Long> cPD = new HashMap<>();
         for ( Map.Entry<Long,Long> entry : map.entrySet()) {
             cal.setTime(new Date(entry.getKey()));
+            cal.set(Calendar.HOUR_OF_DAY,0);
             cal.set(Calendar.MINUTE,0);
             cal.set(Calendar.SECOND,0);
             cal.set(Calendar.MILLISECOND,0);
@@ -185,7 +186,6 @@ public class Dash {
             } else {
                     cPD.put(eventTime,1L);
             }
-            //log("cPD set Increment: "+eventTime + " "+cPD.get(eventTime));
         }
         long elap =new Date().getTime() - s.getTime();
         log("getContainersPerDay took " + elap);
