@@ -112,7 +112,8 @@ body {
 <tr><td style="width:50%;">
 <div class="info">
 ${totalSize} GigaBytes &nbsp;&nbsp;${blobCount} Blobs<br>
-${containerCount} Containers &nbsp;&nbsp; ${auditCount} scrubbed
+${containerCount} Containers &nbsp;&nbsp;${auditCount} scrubbed<br>
+${legacyPathCount} Legacy Paths &nbsp;&nbsp;${legacyAuditCount} scrubbed
 </div>
 #[[
 </td><td align="right">

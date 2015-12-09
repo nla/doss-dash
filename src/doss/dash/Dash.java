@@ -42,6 +42,10 @@ public class Dash {
             if (audits.next()) {
                 model.put("auditCount",numFormat.format(audits.getInt(1)));
             }
+            ResultSet legacyAudits = st.executeQuery("SELECT count(blob_id) as b from legacy_digest_audits;");
+            if (legacyAudits.next()) {
+                model.put("legacyAuditCount",numFormat.format(legacyAudits.getInt(1)));
+            }
             ResultSet size = st.executeQuery("SELECT sum(size) from containers;");
             if (size.next()) {
                 model.put("totalSize",numFormat.format(size.getLong(1)/1024/1024/1024));
@@ -50,10 +54,13 @@ public class Dash {
             if (containers.next()) {
                 model.put("containerCount",numFormat.format(containers.getInt(1)));
             }
-
             ResultSet blobs = st.executeQuery("SELECT count(blob_id) as bc from blobs;");
             if (blobs.next()) {
                 model.put("blobCount",numFormat.format(blobs.getInt(1)));
+            }
+            ResultSet legacyPaths = st.executeQuery("SELECT count(blob_id) as lpc from legacy_paths;");
+            if (legacyPaths.next()) {
+                model.put("legacyPathCount",numFormat.format(legacyPaths.getInt(1)));
             }
         } catch (SQLException e) {
             e.printStackTrace();
