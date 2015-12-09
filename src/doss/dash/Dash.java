@@ -64,6 +64,7 @@ public class Dash {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            return null;
         }
         return new ModelAndView(model,"index.wm");
      }
