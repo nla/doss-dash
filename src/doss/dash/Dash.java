@@ -58,7 +58,7 @@ public class Dash {
             if (blobs.next()) {
                 model.put("blobCount",numFormat.format(blobs.getInt(1)));
             }
-            ResultSet legacyPaths = st.executeQuery("SELECT count(blob_id) as lpc from legacy_paths;");
+            ResultSet legacyPaths = st.executeQuery("SELECT count(blob_id) as lpc from blobs where legacy_path is not NULL;");
             if (legacyPaths.next()) {
                 model.put("legacyPathCount",numFormat.format(legacyPaths.getInt(1)));
             }
