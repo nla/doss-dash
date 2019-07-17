@@ -32,5 +32,8 @@ public class Main {
 
         get("/index.html", (req, res) -> { return new Dash().index();}, new VelocityTemplateEngine());
         get("/getdata", (req, res) -> { res.type("application/json"); return new Dash().json(req.queryParams("graph"));});
+        get("/raw", (req, res) -> { return new Dash().rawdata();}, new VelocityTemplateEngine());
+        get("/report", (req, res) -> { return new Dash().report();}, new VelocityTemplateEngine());
+        get("/reportdata", (req, res) -> { res.type("application/json"); return new Dash().getReportData(req.queryParams("fy"),req.queryParams("graph"));});
     }
 }

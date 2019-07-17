@@ -35,6 +35,10 @@ public class Dash {
         Map<String, Object> model = new HashMap<>();
         return new ModelAndView(model,"report.wm");
     }
+    public ModelAndView rawdata() {
+        Map<String, Object> model = new HashMap<>();
+        return new ModelAndView(model,"raw.wm");
+    }
 
     public ModelAndView index() {
         Map<String, Object> model = new HashMap<>();
