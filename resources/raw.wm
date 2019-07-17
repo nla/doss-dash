@@ -111,6 +111,7 @@ table, th, td {
 <div class="title">
 <center>DOSS2 Usage Report</center>
 </div>
+<h3>Collection Size</h3>
 #[[
 
 <div id="rawdata">

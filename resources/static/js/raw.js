@@ -76,5 +76,5 @@ $(document).ready(function() {
     //console.log("Browser TZ: "+offset);
 
     updateData();
-    setInterval(updateData,300000);
+    //setInterval(updateData,300000);
 });
