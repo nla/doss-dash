@@ -23,12 +23,14 @@ $(document).ready(function() {
                 var year = data[i];
                 var ts = year[0];
                 var num = year[1];
+                //ts = "01/07/" + ts;
                 var epoch = ts / 1000;
                 var d = new Date(0);
                 d.setUTCSeconds(epoch);
                 var tr = table.insertRow();
                 var td = tr.insertCell();
                 td.appendChild(document.createTextNode((d.getMonth()+1) + "/" + d.getFullYear()));
+                //td.appendChild(document.createTextNode(ts));
                 var td2 = tr.insertCell();
                 td2.appendChild(document.createTextNode(num));
             }

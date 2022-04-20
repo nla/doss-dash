@@ -29,7 +29,6 @@ public class Dash {
     private HashMap<Long,Long> blobsPerContainer = new HashMap<>();
     private HashMap<Long,Long> auditTimes = new HashMap<>();
     private HashMap<Long,Long> containerSizes = new HashMap<>();
-    private HashMap<Long,Long> totalFy = new HashMap<>();
 
     public ModelAndView report() {
         Map<String, Object> model = new HashMap<>();
@@ -44,33 +43,59 @@ public class Dash {
         Map<String, Object> model = new HashMap<>();
         DecimalFormat numFormat = new DecimalFormat("###,###,###,###,###,###");
         model.put("testobj", Database.DOSS_HOME);
+        Date timerStart = new Date();
+        long elap = 0;
         try (Connection db = Database.open()) {
             Statement st = db.createStatement();
 
+            timerStart = new Date();
             ResultSet audits = st.executeQuery("SELECT count(container_id) as b from digest_audits;");
             if (audits.next()) {
                 model.put("auditCount",numFormat.format(audits.getInt(1)));
             }
+            elap = new Date().getTime() - timerStart.getTime();
+            log("auditCount query took " + elap);
+
+            timerStart = new Date();
             ResultSet legacyAudits = st.executeQuery("SELECT count(blob_id) as b from legacy_digest_audits;");
             if (legacyAudits.next()) {
                 model.put("legacyAuditCount",numFormat.format(legacyAudits.getInt(1)));
             }
+            elap = new Date().getTime() - timerStart.getTime();
+            log("legacyAuditCount query took " + elap);
+
+            timerStart = new Date();
             ResultSet size = st.executeQuery("SELECT sum(size) from containers;");
             if (size.next()) {
                 model.put("totalSize",numFormat.format(size.getLong(1)/1024/1024/1024));
             }
+            elap = new Date().getTime() - timerStart.getTime();
+            log("totalSize query took " + elap);
+
+            timerStart = new Date();
             ResultSet containers = st.executeQuery("SELECT count(container_id) as bc from containers where state = 3;");
             if (containers.next()) {
                 model.put("containerCount",numFormat.format(containers.getInt(1)));
             }
-            ResultSet blobs = st.executeQuery("SELECT count(blob_id) as bc from blobs;");
+            elap = new Date().getTime() - timerStart.getTime();
+            log("containerCount query took " + elap);
+
+            timerStart = new Date();
+            //ResultSet blobs = st.executeQuery("SELECT count(blob_id) as bc from blobs;");
+            ResultSet blobs = st.executeQuery("select sum(count) from mv_containerid_count;");
             if (blobs.next()) {
                 model.put("blobCount",numFormat.format(blobs.getInt(1)));
             }
-            ResultSet legacyPaths = st.executeQuery("SELECT count(blob_id) as lpc from blobs where legacy_path is not NULL;");
+            elap = new Date().getTime() - timerStart.getTime();
+            log("blobCount query took " + elap);
+
+            timerStart = new Date();
+            ResultSet legacyPaths = st.executeQuery("SELECT legacypath_count from mv_legacypath_count;");
             if (legacyPaths.next()) {
                 model.put("legacyPathCount",numFormat.format(legacyPaths.getInt(1)));
             }
+            elap = new Date().getTime() - timerStart.getTime();
+            log("legacyPathCountquery took " + elap);
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -83,16 +108,24 @@ public class Dash {
         populateContainerArchiveTimes();
         populateContainerSizes();
         if (graph.equals("collectionsize")) {
-            getContainerSizesPerDay(containerArchiveTimes);
-            List<Long> fyEvents = new ArrayList(totalFy.keySet());
-            Collections.sort(fyEvents);
+            HashMap<Long,Long> sizesPerMonth = new HashMap<>();
+            log("PREgetContainerSizesPerMonth outgoing Hash size: " + containerArchiveTimes.size());
+            sizesPerMonth = getContainerSizesPerMonth(containerArchiveTimes);
+            List<Long> myEvents = new ArrayList(sizesPerMonth.keySet());
+            log ("Got " + myEvents.size() + " events");
+            HashMap<Long,Long> colsizePM = new HashMap<>();
+            Collections.sort(myEvents);
             long collectionTotal = 0;
-            for (long event : fyEvents) {
-                log("Adding FY Totals " + totalFy.get(event) + " to total " + collectionTotal);
-                collectionTotal = collectionTotal + totalFy.get(event);
-                totalFy.put(event,collectionTotal);
+            for (long event : myEvents) {
+                Date foo = new Date(event);
+                Long size = sizesPerMonth.get(event);
+                DateFormat simple = new SimpleDateFormat("dd MMM yyyy HH:mm:ss"); 
+                log("Adding MONTH Total " + size + " from " + simple.format(foo) + " to total " + collectionTotal + " = " +  collectionTotal + size);
+                collectionTotal = collectionTotal + size;
+                colsizePM.put(event,collectionTotal);
             }
-            return buildJsonData("collectionsize",totalFy);
+            log("Reported Collection Total: " + collectionTotal);
+            return buildJsonData("collectionsize",colsizePM);
         }
         HashMap<Long,Long> data = new HashMap<Long,Long>();
         HashMap<Long,Long> tempdata = new HashMap<Long,Long>();
@@ -154,6 +187,7 @@ public class Dash {
         counts.append("{\"label\": \"" + label + "\", \"data\": [");
         List<Long> events = new ArrayList(map.keySet());
         Collections.sort(events);
+        log("buildJsonData sorted " + events.size() + " events");
         for (long event : events) {
             StringJoiner countEntry = new StringJoiner(",","[","]");
             long value = map.get(event);
@@ -163,7 +197,7 @@ public class Dash {
             countEntry.add(String.valueOf(event));
             countEntry.add(String.valueOf(value));
             countsArray.add(countEntry.toString());
-            //log("buildJsonData: Adding event: "+event+" value: "+value);
+            log("buildJsonData: Adding event: "+event+" value: "+value);
         }
         counts.append(countsArray.toString());
         counts.append("], \"color\": null}");
@@ -204,6 +238,7 @@ public class Dash {
     private void populateContainerArchiveTimes() {
         //this.containerArchiveTimes = getAllTarContainers("/doss/display/data");
         this.containerArchiveTimes = getAllTarContainers(true);
+        log("populated containerArchiveTimes with " + this.containerArchiveTimes.size());
     }
     private void populateContainerSizes() {
         this.containerSizes = getAllContainerSizes();
@@ -242,11 +277,58 @@ public class Dash {
         return cS;
     }
 
+    private HashMap getContainerSizesPerMonth(HashMap<Long,Long> map) {
+        Date timerStart = new Date();
+        java.util.Calendar cal = Calendar.getInstance();
+        java.util.Calendar byMonCal = Calendar.getInstance();
+        HashMap<Long,Long> csPM = new HashMap<>();
+        HashMap<Long,Long> cS = new HashMap<>();
+        long t = 0;
+        log("getContainerSizesPerMonth incoming Hash size: " + map.size());
+        for ( Map.Entry<Long,Long> entry : map.entrySet()) {
+            // also populate container sizes per month
+            long cid = entry.getKey();
+            Long eventTime = entry.getValue();
+            byMonCal.setTime(new Date(eventTime));
+            byMonCal.set(Calendar.DAY_OF_MONTH,1);
+            byMonCal.set(Calendar.HOUR_OF_DAY,0);
+            byMonCal.set(Calendar.MINUTE,0);
+            byMonCal.set(Calendar.SECOND,0);
+            byMonCal.set(Calendar.MILLISECOND,1);
+            long eventMonth = byMonCal.getTimeInMillis();
+
+            long s = 0;
+            if (containerSizes.containsKey(cid)) {
+                //s = containerSizes.get(cid)/1024/1024/1024;
+                s = containerSizes.get(cid);
+            } else {
+                log("ERRROR NO SIZE for " + cid);
+            }
+            t += s;
+            log("Incrementing month " + byMonCal.get(Calendar.MONTH) + "/" + byMonCal.get(Calendar.YEAR) + " by " + s + " for container " + cid);
+
+            if (csPM.containsKey(eventMonth)) {
+                long oldvalue = csPM.get(eventMonth);
+                csPM.put(eventMonth,s + oldvalue);
+            } else {
+                csPM.put(eventMonth,s);
+            }
+        }
+        for ( Map.Entry<Long,Long> e : csPM.entrySet()) {
+            csPM.put(e.getKey(),e.getValue()/1024/1024/1024);
+        }
+        long elap = new Date().getTime() - timerStart.getTime();
+        log("getContainersSizesPerDay took " + elap);
+        log("Total container sizes: " + t);
+        return csPM;
+    }
+
     private HashMap getContainerSizesPerDay(HashMap<Long,Long> map) {
         Date timerStart = new Date();
         java.util.Calendar cal = Calendar.getInstance();
-        java.util.Calendar fyCal = Calendar.getInstance();
+        java.util.Calendar byMonCal = Calendar.getInstance();
         HashMap<Long,Long> cS = new HashMap<>();
+        long t = 0;
         for ( Map.Entry<Long,Long> entry : map.entrySet()) {
             cal.setTime(new Date(entry.getKey()));
             cal.set(Calendar.HOUR_OF_DAY,0);
@@ -255,36 +337,29 @@ public class Dash {
             cal.set(Calendar.MILLISECOND,0);
             long eventTime = cal.getTimeInMillis();
 
-            fyCal.setTime(new Date(entry.getKey()));
-            fyCal.set(Calendar.MONTH,Calendar.JULY);
-            fyCal.set(Calendar.DAY_OF_MONTH,1);
-            fyCal.set(Calendar.HOUR_OF_DAY,0);
-            fyCal.set(Calendar.MINUTE,0);
-            fyCal.set(Calendar.SECOND,0);
-            fyCal.set(Calendar.MILLISECOND,0);
-            if (fyCal.get(Calendar.MONTH) < 6) {
-                fyCal.add(Calendar.YEAR, -1);
-            }
-            long fy = fyCal.getTimeInMillis();
             long cid = entry.getValue();
             long s = 0;
             if (containerSizes.containsKey(cid)) {
-                s = containerSizes.get(cid)/1024/1024/1024;
+                //s = containerSizes.get(cid)/1024/1024/1024;
+                s = containerSizes.get(cid);
+            } else {
+                log("ERRROR NO SIZE for " + cid);
             }
-            log("Incrementing FY " + fyCal.get(Calendar.YEAR) + " by " + s + " for container " + cid);
+            t += s;
             if (cS.containsKey(eventTime)) {
                 cS.put(eventTime,s + cS.get(eventTime));
             } else {
                 cS.put(eventTime,s);
             }
-            if (totalFy.containsKey(fy)) {
-                totalFy.put(fy,s + totalFy.get(fy));
-            } else {
-                totalFy.put(fy,s);
-            }
+
+        }
+        for ( Map.Entry<Long,Long> e : cS.entrySet()) {
+            log("getContainerSizesPerDay: bytes2gigabytes: "+e.getKey() + " val "+e.getValue()/1024/1024/1024);
+            cS.put(e.getKey(),e.getValue()/1024/1024/1024);
         }
         long elap = new Date().getTime() - timerStart.getTime();
         log("getContainersSizesPerDay took " + elap);
+        log("Total container sizes: " + t);
         return cS;
     }
 
@@ -313,23 +388,28 @@ public class Dash {
 
     private HashMap getRecent(HashMap<Long,Long> map, long age,int calObject) {
         Date s = new Date();
+        long count =0;
         java.util.Calendar cutOffCal = Calendar.getInstance();
         cutOffCal.add(calObject,-(int)age);
         long cutOff = cutOffCal.getTimeInMillis();
-        log("Getting objects < "+age+" old");
+        log("Getting objects < "+age+" old : " + calObject);
         HashMap<Long,Long> newMap = new HashMap<>();
         for ( Map.Entry<Long,Long> entry : map.entrySet()) {
-            long eventTime = entry.getKey();
-            long val = entry.getValue();
-            //log("getRecent: checking eventTime: "+eventTime+" cutoff: "+cutOff +" "+age);
+            //long eventTime = entry.getKey();
+            //long val = entry.getValue();
+            long eventTime = entry.getValue();
+            long val = entry.getKey();
+            //log("getRecent: checking eventTime: "+eventTime+" cutoff: "+cutOff +" "+age + " val "+val);
             if (eventTime > cutOff) {
-                //log("getRecent: Adding Recent key: "+ eventTime + " val "+ val);
+             //   log("getRecent: Adding Recent key: "+ eventTime + " val "+ val);
+                count++;
                 newMap.put(eventTime,val);
             }
         }
         long elap =new Date().getTime() - s.getTime();
-        log("getRecent took " + elap);
-        return addMissing(newMap,age,calObject);
+        log("getRecent took " + elap + " added " + count + " events");
+        //return addMissing(newMap,age,calObject);
+        return(newMap);
     }
 
     private HashMap addMissing(HashMap<Long,Long> map, long age, int calObject) {
@@ -393,7 +473,8 @@ public class Dash {
             Statement st = db.createStatement();
             ResultSet rs = st.executeQuery(SQL);
             while (rs.next()) {
-                aTs.put(rs.getTimestamp(1,cal).getTime(), rs.getLong(2));
+                //aTs.put(rs.getTimestamp(1,cal).getTime(), rs.getLong(2));
+                aTs.put(rs.getLong(2),rs.getTimestamp(1,cal).getTime());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -406,14 +487,16 @@ public class Dash {
     private HashMap getAllContainerSizes() {
         Date s = new Date();
         HashMap<Long,Long> aCS = new HashMap<>();
-        String SQL = "SELECT container_id,size from containers where size >0 and container_id";
+        String SQL = "SELECT container_id,size from containers where size >0";
 
         log("SQL: "+SQL);
+        long totalsize = 0;
         try (Connection db = Database.open()) {
             Statement st = db.createStatement();
             ResultSet rs = st.executeQuery(SQL);
             while (rs.next()) {
                 aCS.put(rs.getLong(1), rs.getLong(2));
+                totalsize += rs.getLong(2);
                 log("ContainerSizes: " + rs.getLong(1) + " " + rs.getLong(2));
             }
         } catch (SQLException e) {
@@ -421,6 +504,7 @@ public class Dash {
         }
         long elap =new Date().getTime() - s.getTime();
         log("getAllContainerSizes took " + elap);
+        log("Total size of Containers: " + totalsize);
         return aCS;
     }
 
@@ -435,7 +519,8 @@ public class Dash {
         //    containers.add(String.valueOf(entry.getValue()));
        // }
         //String SQL = "SELECT container_id,count(blob_id) from blobs where container_id IN ("+containers.toString()+") group by container_id";
-        String SQL = "SELECT container_id,count(blob_id) from blobs group by container_id";
+        //String SQL = "SELECT container_id,count(blob_id) from blobs group by container_id";
+        String SQL = "SELECT *  from mv_containerid_count";
         //log("SQL: "+SQL);
         try (Connection db = Database.open()) {
             Statement st = db.createStatement();
@@ -468,14 +553,15 @@ public class Dash {
             Statement st = db.createStatement();
             ResultSet rs = st.executeQuery(SQL);
             while (rs.next()) {
-                m.put(rs.getLong(2)*1000,rs.getLong(1));
-               //log("getAllTarContainers:  found " + rs.getLong(2)*1000 + " - " + rs.getLong(1));
+                m.put(rs.getLong(1),rs.getLong(2)*1000);
+               log("getAllTarContainers:  found " + rs.getLong(2)*1000 + " - " + rs.getLong(1));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         long elap =new Date().getTime() - s.getTime();
         log("getAllTarContainers took " + elap);
+        log("Returning TarContainer Count: " + m.size());
         return m;
     }
 
