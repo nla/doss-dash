@@ -544,9 +544,9 @@ public class Dash {
         //String SQL = "SELECT count(container_id),cast(time as date) as t from container_history where state = '3' and  time >= CURRENT_TIMESTAMP() -" + HISTORY +" group by t order by t asc;";
         String SQL = null;
         if (all) {
-            SQL = "SELECT container_id,CAST(UNIX_TIMESTAMP(time) AS INT) from container_history where state = '3' order by time asc;";
+            SQL = "SELECT container_id,CAST(UNIX_TIMESTAMP(time) AS DEC) from container_history where state = '3' order by time asc;";
         } else {
-            SQL = "SELECT container_id,CAST(UNIX_TIMESTAMP(time) AS INT) from container_history where state = '3' and cas(time as date) >= CURRENT_DATEP() -" + HISTORY +"  order by time asc;";
+            SQL = "SELECT container_id,CAST(UNIX_TIMESTAMP(time) AS DEC) from container_history where state = '3' and cas(time as date) >= CURRENT_DATEP() -" + HISTORY +"  order by time asc;";
         }
         log("SQL: "+SQL);
         try (Connection db = Database.open()) {
